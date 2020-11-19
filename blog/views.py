@@ -2,10 +2,22 @@ from django.shortcuts import render
 
 from django.shortcuts import render, get_object_or_404
 from .models import Post
+from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 
 def post_list(request):
-    posts = Post.published.all()
-    return render(request, 'blog/post/list.html', {'posts': posts})
+    object_list = Post.published.all()
+    paginator = Paginator(object_list, 3)  # 3 сообщения на каждой странице
+    page = request.GET.get('page')
+    try:
+        posts = paginator.page(page)
+    except PageNotAnInteger:
+        # Если page не является целым числом, доставить первую страницу
+        posts = paginator.page(1)
+    except EmptyPage:
+        # Если страница выходит за пределы допустимого диапазона,
+        # доставляется последняя страница результатов
+        posts = paginator.page(paginator.num_pages)
+    return render(request, 'blog/post/list.html', {'page': page, 'posts': posts})
 
 def post_detail(request, year, month, day, post):
     post = get_object_or_404(Post, slug=post,
